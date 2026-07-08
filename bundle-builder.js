@@ -1,12 +1,10 @@
 /**
- * Bundle Builder для Tilda
- * Модуль для создания конструктора товарных наборов
+ * Bundle Builder для Tilda — ОТЛАДОЧНАЯ ВЕРСИЯ
  */
 
 (function() {
   'use strict';
 
-  // ==================== КОНФИГУРАЦИЯ ====================
   const CONFIG = {
     minItems: 3,
     maxItems: 10,
@@ -18,22 +16,16 @@
     ],
     currency: '₽',
     storageKey: 'bundle-builder-state',
-    // Правильные селекторы для Тильды
-    productSelector: '.t-catalog__card.t-item, .t-product, .t700__product',
+    productSelector: '.t-catalog__card.t-item, .t-product, .t700__product, .t-item',
     titleSelector: '.t-catalog__card__title, .t-name, .t-product__title',
     priceSelector: '.t-catalog__card__price-value, .t-product__price, .t-price',
     categorySelector: '.t-catalog__card__descr, .t-product__category',
     insertAfterSelector: '.t-catalog, .t700, .t-products, .t-store-block'
   };
 
-  // ==================== STATE ====================
-  let state = {
-    items: []
-  };
-
+  let state = { items: [] };
   let products = [];
 
-  // ==================== УТИЛИТЫ ====================
   function parsePrice(priceText) {
     if (!priceText) return 0;
     const cleaned = priceText.replace(/[^\d]/g, '');
@@ -44,26 +36,49 @@
     return 'bb_' + Math.random().toString(36).substr(2, 9);
   }
 
-  // ==================== TILDA PARSER ====================
+  // ==================== ОТЛАДКА ====================
+  function debugInfo() {
+    console.log('🔍 === ОТЛАДКА ===');
+    console.log('📄 Всего элементов на странице:', document.querySelectorAll('*').length);
+    console.log('🔎 Ищем по селектору:', CONFIG.productSelector);
+    
+    const allItems = document.querySelectorAll(CONFIG.productSelector);
+    console.log('✅ Найдено элементов:', allItems.length);
+    
+    allItems.forEach((el, i) => {
+      console.log(`  [${i}]`, {
+        classList: Array.from(el.classList).join(' '),
+        id: el.id,
+        dataset: el.dataset
+      });
+    });
+    
+    console.log('🔎 Элементы body:', Array.from(document.body.classList).join(' '));
+    console.log('=================');
+  }
+
   function parseProducts() {
     const items = [];
     const productElements = document.querySelectorAll(CONFIG.productSelector);
 
+    console.log(`📦 Начинаю парсинг ${productElements.length} элементов...`);
+
     productElements.forEach((el, index) => {
-      // Пробуем разные data-атрибуты для ID
+      console.log(`  Обработка элемента [${index}]:`, {
+        classes: el.className.substring(0, 100)
+      });
+
       const id = el.dataset.productUid || 
                  el.dataset.productGenUid || 
                  el.dataset.productId || 
-                 el.getAttribute('data-product-id') || 
                  generateId();
       
       const titleEl = el.querySelector(CONFIG.titleSelector);
       const priceEl = el.querySelector(CONFIG.priceSelector);
       const categoryEl = el.querySelector(CONFIG.categorySelector);
       
-      // Картинка может быть в background-image
-      const bgImgEl = el.querySelector('.t-catalog__card__bgimg, .js-product-img');
       let image = '';
+      const bgImgEl = el.querySelector('.t-catalog__card__bgimg, .js-product-img');
       
       if (bgImgEl) {
         const style = bgImgEl.getAttribute('style');
@@ -75,7 +90,6 @@
         }
       }
       
-      // Если не нашли background, ищем обычный img
       if (!image) {
         const imgEl = el.querySelector('img');
         if (imgEl) {
@@ -92,13 +106,13 @@
         element: el
       };
 
+      console.log(`    → ${product.name}, ${product.price}₽`);
       items.push(product);
     });
 
     return items;
   }
 
-  // ==================== STATE MANAGEMENT ====================
   function loadState() {
     try {
       const saved = localStorage.getItem(CONFIG.storageKey);
@@ -139,7 +153,7 @@
 
     saveState();
     updateUI();
-    updateProductButtons(); // Обновляем кнопки
+    updateProductButtons();
     
     showNotification(`✅ ${product.name} добавлен в набор`);
     
@@ -154,7 +168,7 @@
       state.items.splice(index, 1);
       saveState();
       updateUI();
-      updateProductButtons(); // Обновляем кнопки
+      updateProductButtons();
       
       if (item) {
         showNotification(`❌ ${item.name} удалён из набора`);
@@ -162,7 +176,6 @@
     }
   }
 
-  // ==================== УВЕДОМЛЕНИЯ ====================
   function showNotification(message) {
     const notification = document.createElement('div');
     notification.className = 'bb-notification';
@@ -175,7 +188,6 @@
     }, 2000);
   }
 
-  // ==================== PRICING ====================
   function calculatePricing() {
     const itemCount = state.items.length;
     const subtotal = state.items.reduce((sum, item) => sum + item.price, 0);
@@ -216,7 +228,6 @@
     };
   }
 
-  // ==================== UI ====================
   function createPanel() {
     const panel = document.createElement('div');
     panel.className = 'bb-panel';
@@ -286,7 +297,7 @@
     const addToCartBtn = document.getElementById('bbAddToCart');
     addToCartBtn.addEventListener('click', () => {
       if (state.items.length >= CONFIG.minItems) {
-        alert('Товары добавлены в корзину! (интеграция с Тильдой)');
+        alert('Товары добавлены в корзину!');
         console.log('Bundle items:', state.items);
       }
     });
@@ -371,7 +382,6 @@
     }
   }
 
-  // ==================== ОБНОВЛЕНИЕ КНОПОК ====================
   function updateProductButtons() {
     products.forEach(product => {
       const button = product.element.querySelector('.bb-add-to-bundle');
@@ -388,34 +398,32 @@
     });
   }
 
-  // ==================== ДОБАВЛЕНИЕ КНОПОК В КАРТОЧКИ ====================
   function addButtonsToProducts() {
     products.forEach(product => {
-      // Проверяем, нет ли уже кнопки
       if (product.element.querySelector('.bb-add-to-bundle')) {
         return;
       }
 
-      // Создаём кнопку
       const button = document.createElement('button');
       button.className = 'bb-add-to-bundle';
       button.textContent = 'В набор';
       
-      // Обработчик клика
       button.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         addItem(product);
       });
 
-      // Добавляем кнопку в карточку
       product.element.appendChild(button);
     });
   }
 
-  // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+  // ==================== ИНИЦИАЛИЗАЦИЯ С ЗАДЕРЖКОЙ ====================
   function init() {
     console.log('🚀 Bundle Builder запускается...');
+    
+    // Показываем отладочную информацию
+    debugInfo();
 
     loadState();
     products = parseProducts();
@@ -427,14 +435,27 @@
       updateUI();
       console.log('✅ Bundle Builder готов!');
     } else {
-      console.error('❌ Не найдено товаров на странице. Проверь селекторы.');
+      console.error('❌ Не найдено товаров на странице!');
+      console.log('Попробуй вручную в консоли:');
+      console.log('  document.querySelectorAll(".t-catalog__card.t-item").length');
+      console.log('  document.querySelectorAll(".t-product").length');
     }
   }
 
+  // Пробуем несколько раз запустить
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
-    init();
+    // Запускаем с небольшой задержкой
+    setTimeout(init, 500);
   }
+
+  // Пробуем ещё раз через 2 секунды (на случай AJAX загрузки)
+  setTimeout(() => {
+    if (products.length === 0) {
+      console.log(' Повторная попытка через 2 секунды...');
+      init();
+    }
+  }, 2000);
 
 })();
