@@ -1,88 +1,86 @@
-/**
- * Bundle Builder для Tilda
- * Модуль для создания конструктора товарных наборов
- */
+/* ==================== КНОПКА "В НАБОР" ==================== */
 
-(function() {
-  'use strict';
+.bb-add-to-bundle {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
 
-  // ==================== КОНФИГУРАЦИЯ ====================
-  const CONFIG = {
-    minItems: 3,
-    maxItems: 10,
-    discountRules: [
-      { threshold: 3, discount: 5 },
-      { threshold: 5, discount: 10 },
-      { threshold: 7, discount: 15 },
-      { threshold: 10, discount: 20 }
-    ],
-    currency: '₽',
-    storageKey: 'bundle-builder-state',
-    productSelector: '.t-product, .t700__product, .t-item',
-    titleSelector: '.t-product__title, .t700__title, .t-title, .t-name',
-    priceSelector: '.t-product__price, .t700__price, .t-price, .t-cost',
-    categorySelector: '.t-product__category, .t-category',
-    insertAfterSelector: '.t700, .t-products, .t-store-block'
-  };
+.bb-add-to-bundle:hover {
+  background: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
 
-  // ==================== STATE ====================
-  let state = {
-    items: []
-  };
+.bb-add-to-bundle:active {
+  transform: translateY(0);
+}
 
-  let products = [];
+/* Если товар уже в наборе — меняем стиль кнопки */
+.bb-add-to-bundle.bb-in-bundle {
+  background: #2196F3;
+}
 
-  // ==================== УТИЛИТЫ ====================
-  function parsePrice(priceText) {
-    if (!priceText) return 0;
-    const cleaned = priceText.replace(/[^\d]/g, '');
-    return parseInt(cleaned, 10) || 0;
+.bb-add-to-bundle.bb-in-bundle:hover {
+  background: #1976D2;
+}
+
+/* ==================== УВЕДОМЛЕНИЯ ==================== */
+
+.bb-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #333;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 10000;
+  animation: bbSlideInRight 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.bb-notification-hide {
+  animation: bbSlideOutRight 0.3s ease forwards;
+}
+
+@keyframes bbSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
   }
-
-  function generateId() {
-    return 'bb_' + Math.random().toString(36).substr(2, 9);
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
+}
 
-  // ==================== TILDA PARSER ====================
-  function parseProducts() {
-    const items = [];
-    const productElements = document.querySelectorAll(CONFIG.productSelector);
-
-    productElements.forEach((el, index) => {
-      const id = el.dataset.productId || el.getAttribute('data-product-id') || generateId();
-      
-      const titleEl = el.querySelector(CONFIG.titleSelector);
-      const priceEl = el.querySelector(CONFIG.priceSelector);
-      const categoryEl = el.querySelector(CONFIG.categorySelector);
-      const imgEl = el.querySelector('img');
-
-      const product = {
-        id: id,
-        name: titleEl ? titleEl.textContent.trim() : `Товар ${index + 1}`,
-        price: priceEl ? parsePrice(priceEl.textContent) : 0,
-        category: categoryEl ? categoryEl.textContent.trim() : '',
-        image: imgEl ? imgEl.src : '',
-        element: el
-      };
-
-      items.push(product);
-    });
-
-    return items;
+@keyframes bbSlideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
   }
-
-  // ==================== STATE MANAGEMENT ====================
-  function loadState() {
-    try {
-      const saved = localStorage.getItem(CONFIG.storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        state.items = parsed.items || [];
-      }
-    } catch (e) {
-      console.warn('Bundle Builder: не удалось загрузить состояние', e);
-    }
+  to {
+    opacity: 0;
+    transform: translateX(100px);
   }
+}
 
-  function saveState() {
-    try {
+/* Адаптивность для кнопки */
+@media (max-width: 768px) {
+  .bb-add-to-bundle {
+    padding: 8px;
+    font-size: 13px;
+  }
+}
