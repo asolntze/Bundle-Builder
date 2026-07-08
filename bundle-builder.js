@@ -1,5 +1,5 @@
 /**
- * Bundle Builder для Tilda — С ОЖИДАНИЕМ ЗАГРУЗКИ
+ * Bundle Builder для Tilda — С ИНТЕГРАЦИЕЙ В КОРЗИНУ
  */
 
 (function() {
@@ -201,6 +201,96 @@
     };
   }
 
+  // ==================== ДОБАВЛЕНИЕ В КОРЗИНУ ТИЛЬДЫ ====================
+  function addToTildaCart(productId, quantity = 1) {
+    console.log(`Попытка добавить товар ${productId} в корзину...`);
+    
+    // Способ 1: Через API Тильды (если доступно)
+    if (typeof window.Tilda !== 'undefined' && typeof window.Tilda.addProductToCart === 'function') {
+      try {
+        window.Tilda.addProductToCart(productId, quantity);
+        console.log('✅ Добавлено через Tilda.addProductToCart');
+        return true;
+      } catch (e) {
+        console.warn('Tilda.addProductToCart не сработал:', e);
+      }
+    }
+    
+    // Способ 2: Ищем кнопку "В корзину" для этого товара и кликаем
+    const productElement = document.querySelector(`[data-product-uid="${productId}"], [data-product-gen-uid="${productId}"]`);
+    if (productElement) {
+      const buyButton = productElement.querySelector('.t-btn, .t-catalog__card__btn, [data-action="add-to-cart"], .js-catalog-prod-btn2');
+      if (buyButton) {
+        console.log('✅ Нашёл кнопку, кликаем...');
+        buyButton.click();
+        return true;
+      }
+    }
+    
+    // Способ 3: Ищем все кнопки "В корзину" на странице
+    const allButtons = document.querySelectorAll('.t-btn, .t-catalog__card__btn');
+    if (allButtons.length > 0) {
+      console.log('✅ Кликаем по первой кнопке "В корзину"');
+      allButtons[0].click();
+      return true;
+    }
+    
+    console.error('❌ Не удалось найти кнопку "В корзину"');
+    return false;
+  }
+
+  function addBundleToCart() {
+    if (state.items.length < CONFIG.minItems) {
+      alert(`Собери минимум ${CONFIG.minItems} товара`);
+      return;
+    }
+
+    console.log('🛒 Добавляем набор в корзину:', state.items);
+    
+    let successCount = 0;
+    
+    // Добавляем каждый товар из набора
+    state.items.forEach((item, index) => {
+      setTimeout(() => {
+        const success = addToTildaCart(item.id);
+        if (success) {
+          successCount++;
+          console.log(`✅ Товар ${index + 1}/${state.items.length} добавлен`);
+        } else {
+          console.warn(`⚠️ Товар ${index + 1}/${state.items.length} не добавлен`);
+        }
+        
+        // После добавления последнего товара
+        if (index === state.items.length - 1) {
+          setTimeout(() => {
+            if (successCount > 0) {
+              showNotification(`🎉 Добавлено ${successCount} из ${state.items.length} товаров!`);
+              
+              // Очищаем набор после успешного добавления
+              if (successCount === state.items.length) {
+                state.items = [];
+                saveState();
+                updateUI();
+                updateProductButtons();
+                
+                // Открываем корзину Тильды (если есть)
+                setTimeout(() => {
+                  const cartButton = document.querySelector('.t-cart, .t-cart-btn, [data-tilda-cart]');
+                  if (cartButton) {
+                    cartButton.click();
+                    showNotification('🛒 Корзина открыта!');
+                  }
+                }, 500);
+              }
+            } else {
+              alert('Не удалось добавить товары в корзину. Попробуй вручную.');
+            }
+          }, 1000);
+        }
+      }, index * 300); // Задержка между добавлениями
+    });
+  }
+
   function createPanel() {
     const panel = document.createElement('div');
     panel.className = 'bb-panel';
@@ -247,7 +337,6 @@
   }
 
   function insertPanel() {
-    // Проверяем, не создана ли уже панель
     if (document.querySelector('.bb-panel')) {
       console.log('Панель уже создана');
       return;
@@ -275,10 +364,7 @@
 
     const addToCartBtn = document.getElementById('bbAddToCart');
     addToCartBtn.addEventListener('click', () => {
-      if (state.items.length >= CONFIG.minItems) {
-        alert('Товары добавлены в корзину!');
-        console.log('Bundle items:', state.items);
-      }
+      addBundleToCart();
     });
   }
 
@@ -397,16 +483,15 @@
     });
   }
 
-  // ==================== ОЖИДАНИЕ ЗАГРУЗКИ ТОВАРОВ ====================
   function waitForProducts(callback, maxAttempts = 10) {
     let attempts = 0;
     
     const checkProducts = () => {
-      const products = document.querySelectorAll(CONFIG.productSelector);
+      const foundProducts = document.querySelectorAll(CONFIG.productSelector);
       
-      if (products.length > 0) {
+      if (foundProducts.length > 0) {
         console.log(`✅ Товары найдены с попытки ${attempts + 1}!`);
-        callback(products);
+        callback(foundProducts);
       } else if (attempts >= maxAttempts) {
         console.error('❌ Товары не найдены после', maxAttempts, 'попыток');
         callback([]);
@@ -420,7 +505,6 @@
     checkProducts();
   }
 
-  // ==================== MUTATION OBSERVER ====================
   function setupMutationObserver() {
     observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
@@ -443,14 +527,12 @@
     });
   }
 
-  // ==================== ИНИЦИАЛИЗАЦИЯ ====================
   function init() {
     console.log('🚀 Bundle Builder запускается...');
     console.log('🔎 Ищем товары по селектору:', CONFIG.productSelector);
 
     loadState();
     
-    // Ждём загрузки товаров
     waitForProducts((foundProducts) => {
       if (foundProducts.length > 0) {
         products = parseProducts();
@@ -468,7 +550,6 @@
     });
   }
 
-  // Запускаем
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
