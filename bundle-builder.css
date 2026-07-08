@@ -1,0 +1,314 @@
+/* ==================== BUNDLE BUILDER STYLES ==================== */
+
+/* Делаем товары кликабельными */
+.bb-product-clickable {
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.bb-product-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Панель Bundle Builder */
+.bb-panel {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 380px;
+  max-width: calc(100vw - 40px);
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  padding: 20px;
+  z-index: 9999;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  animation: bbSlideIn 0.3s ease;
+}
+
+@keyframes bbSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.bb-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.bb-panel-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.bb-panel-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.bb-panel-close:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+/* Прогресс-бар */
+.bb-progress {
+  margin-bottom: 20px;
+}
+
+.bb-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.bb-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50, #8BC34A);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.bb-progress-text {
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Список товаров */
+.bb-items {
+  max-height: 250px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+  border: 2px dashed #e0e0e0;
+  border-radius: 12px;
+  padding: 15px;
+  background: #fafafa;
+  min-height: 120px;
+}
+
+.bb-empty {
+  text-align: center;
+  color: #999;
+  padding: 30px 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.bb-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  animation: bbFadeIn 0.3s ease;
+}
+
+.bb-item:last-child {
+  margin-bottom: 0;
+}
+
+@keyframes bbFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.bb-item-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.bb-item-img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.bb-item-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.bb-item-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #333;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bb-item-price {
+  color: #4CAF50;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.bb-item-remove {
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.bb-item-remove:hover {
+  background: #cc0000;
+}
+
+/* Цены */
+.bb-pricing {
+  border-top: 2px solid #f0f0f0;
+  padding-top: 15px;
+  margin-bottom: 15px;
+}
+
+.bb-price-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.bb-discount-row {
+  color: #4CAF50;
+  font-weight: 600;
+}
+
+.bb-total-row {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Подсказка */
+.bb-hint {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: 15px;
+  text-align: center;
+  color: #856404;
+  display: none;
+}
+
+.bb-hint-success {
+  background: #d4edda;
+  border-color: #28a745;
+  color: #155724;
+}
+
+/* Кнопка */
+.bb-add-to-cart {
+  width: 100%;
+  padding: 14px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bb-add-to-cart:hover:not(:disabled) {
+  background: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.bb-add-to-cart:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .bb-panel {
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding: 15px;
+  }
+
+  .bb-items {
+    max-height: 180px;
+  }
+}
+
+/* Скроллбар */
+.bb-items::-webkit-scrollbar {
+  width: 6px;
+}
+
+.bb-items::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.bb-items::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.bb-items::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
