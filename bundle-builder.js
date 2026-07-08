@@ -1,5 +1,5 @@
 /**
- * Bundle Builder для Tilda — ОТЛАДОЧНАЯ ВЕРСИЯ
+ * Bundle Builder для Tilda — С ОЖИДАНИЕМ ЗАГРУЗКИ
  */
 
 (function() {
@@ -16,7 +16,7 @@
     ],
     currency: '₽',
     storageKey: 'bundle-builder-state',
-    productSelector: '.t-catalog__card.t-item, .t-product, .t700__product, .t-item',
+    productSelector: '.t-catalog__card.t-item, .t-product, .t700__product',
     titleSelector: '.t-catalog__card__title, .t-name, .t-product__title',
     priceSelector: '.t-catalog__card__price-value, .t-product__price, .t-price',
     categorySelector: '.t-catalog__card__descr, .t-product__category',
@@ -25,6 +25,7 @@
 
   let state = { items: [] };
   let products = [];
+  let observer = null;
 
   function parsePrice(priceText) {
     if (!priceText) return 0;
@@ -36,38 +37,11 @@
     return 'bb_' + Math.random().toString(36).substr(2, 9);
   }
 
-  // ==================== ОТЛАДКА ====================
-  function debugInfo() {
-    console.log('🔍 === ОТЛАДКА ===');
-    console.log('📄 Всего элементов на странице:', document.querySelectorAll('*').length);
-    console.log('🔎 Ищем по селектору:', CONFIG.productSelector);
-    
-    const allItems = document.querySelectorAll(CONFIG.productSelector);
-    console.log('✅ Найдено элементов:', allItems.length);
-    
-    allItems.forEach((el, i) => {
-      console.log(`  [${i}]`, {
-        classList: Array.from(el.classList).join(' '),
-        id: el.id,
-        dataset: el.dataset
-      });
-    });
-    
-    console.log('🔎 Элементы body:', Array.from(document.body.classList).join(' '));
-    console.log('=================');
-  }
-
   function parseProducts() {
     const items = [];
     const productElements = document.querySelectorAll(CONFIG.productSelector);
 
-    console.log(`📦 Начинаю парсинг ${productElements.length} элементов...`);
-
     productElements.forEach((el, index) => {
-      console.log(`  Обработка элемента [${index}]:`, {
-        classes: el.className.substring(0, 100)
-      });
-
       const id = el.dataset.productUid || 
                  el.dataset.productGenUid || 
                  el.dataset.productId || 
@@ -106,7 +80,6 @@
         element: el
       };
 
-      console.log(`    → ${product.name}, ${product.price}₽`);
       items.push(product);
     });
 
@@ -274,6 +247,12 @@
   }
 
   function insertPanel() {
+    // Проверяем, не создана ли уже панель
+    if (document.querySelector('.bb-panel')) {
+      console.log('Панель уже создана');
+      return;
+    }
+
     const targetSelector = CONFIG.insertAfterSelector;
     let insertAfter = document.querySelector(targetSelector);
 
@@ -418,44 +397,82 @@
     });
   }
 
-  // ==================== ИНИЦИАЛИЗАЦИЯ С ЗАДЕРЖКОЙ ====================
-  function init() {
-    console.log('🚀 Bundle Builder запускается...');
+  // ==================== ОЖИДАНИЕ ЗАГРУЗКИ ТОВАРОВ ====================
+  function waitForProducts(callback, maxAttempts = 10) {
+    let attempts = 0;
     
-    // Показываем отладочную информацию
-    debugInfo();
-
-    loadState();
-    products = parseProducts();
-    console.log(` Найдено товаров: ${products.length}`);
-
-    if (products.length > 0) {
-      insertPanel();
-      addButtonsToProducts();
-      updateUI();
-      console.log('✅ Bundle Builder готов!');
-    } else {
-      console.error('❌ Не найдено товаров на странице!');
-      console.log('Попробуй вручную в консоли:');
-      console.log('  document.querySelectorAll(".t-catalog__card.t-item").length');
-      console.log('  document.querySelectorAll(".t-product").length');
-    }
+    const checkProducts = () => {
+      const products = document.querySelectorAll(CONFIG.productSelector);
+      
+      if (products.length > 0) {
+        console.log(`✅ Товары найдены с попытки ${attempts + 1}!`);
+        callback(products);
+      } else if (attempts >= maxAttempts) {
+        console.error('❌ Товары не найдены после', maxAttempts, 'попыток');
+        callback([]);
+      } else {
+        attempts++;
+        console.log(`Попытка ${attempts}/${maxAttempts} — товаров пока нет, ждём...`);
+        setTimeout(checkProducts, 500);
+      }
+    };
+    
+    checkProducts();
   }
 
-  // Пробуем несколько раз запустить
+  // ==================== MUTATION OBSERVER ====================
+  function setupMutationObserver() {
+    observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.addedNodes.length > 0) {
+          const newProducts = document.querySelectorAll(CONFIG.productSelector);
+          if (newProducts.length > products.length) {
+            console.log('🔍 Обнаружены новые товары через MutationObserver');
+            products = parseProducts();
+            insertPanel();
+            addButtonsToProducts();
+            updateUI();
+          }
+        }
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+  function init() {
+    console.log('🚀 Bundle Builder запускается...');
+    console.log('🔎 Ищем товары по селектору:', CONFIG.productSelector);
+
+    loadState();
+    
+    // Ждём загрузки товаров
+    waitForProducts((foundProducts) => {
+      if (foundProducts.length > 0) {
+        products = parseProducts();
+        console.log(` Найдено товаров: ${products.length}`);
+        
+        insertPanel();
+        addButtonsToProducts();
+        updateUI();
+        setupMutationObserver();
+        
+        console.log('✅ Bundle Builder готов!');
+      } else {
+        console.error('❌ Товары не найдены на странице');
+      }
+    });
+  }
+
+  // Запускаем
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
-    // Запускаем с небольшой задержкой
-    setTimeout(init, 500);
+    init();
   }
-
-  // Пробуем ещё раз через 2 секунды (на случай AJAX загрузки)
-  setTimeout(() => {
-    if (products.length === 0) {
-      console.log(' Повторная попытка через 2 секунды...');
-      init();
-    }
-  }, 2000);
 
 })();
